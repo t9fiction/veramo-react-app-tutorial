@@ -3,6 +3,13 @@ import './App.css'
 
 import { agent } from './veramo/setup'
 
+declare global {
+  interface Window {
+    ethereum?: any;
+  }
+}
+
+
 function App() {
   const [didDoc, setDidDoc] = useState<any>()
 
@@ -14,8 +21,32 @@ function App() {
     setDidDoc(doc)
   }
 
+  const configureMetaMask = async () => {
+    try {
+      // Check if MetaMask is installed
+      if (!window.ethereum) {
+        throw new Error('MetaMask extension not found')
+      }
+
+      // Request MetaMask access to the current Ethereum account
+      await window.ethereum.enable()
+
+      // Add the Ethereum address to the agent's DID resolver
+      await agent.didManagerAddEthrDid({
+        provider: window.ethereum,
+        alias: 'MetaMask',
+        kms: 'local',
+      })
+
+      // Resolve the DID document with the updated agent configuration
+      resolve()
+    } catch (error) {
+      console.error('MetaMask configuration error:', error)
+    }
+  }
+
   useEffect(() => {
-    resolve()
+    configureMetaMask()
   }, [])
 
   return (
